@@ -344,7 +344,7 @@ function getPreviousPerformance(exerciseName) {
     
     if (previousSets.length === 0) return null;
     
-    return previousSets.map(s => `${s.weight}kg × ${s.reps}`).join(', ');
+    return previousSets.map(s => `${s.weight}lb × ${s.reps}`).join(', ');
 }
 
 function updateSet(exercise, setIdx, field, value) {
@@ -467,6 +467,7 @@ function addNewRoutine() {
 
 // Status Messages
 function showStatus(message, type) {
+    window.scrollTo(0,0)
     const statusDiv = document.getElementById('statusMessage');
     statusDiv.innerHTML = `<div class="status-message ${type}">${message}</div>`;
     setTimeout(() => statusDiv.innerHTML = '', 5000);
