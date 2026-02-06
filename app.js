@@ -385,6 +385,11 @@ function startTimer(seconds) {
         
         if (timeRemaining <= 0) {
             stopTimer();
+            try {
+                navigator.vibrate([200, 100, 200]);
+            } catch (error) {
+                console.log("tried to vibrate but device doesn't support it");
+            }
             // Optional: play sound or vibrate
         }
     }, 1000);
