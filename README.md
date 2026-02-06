@@ -13,10 +13,6 @@ A free, self-hosted workout tracking web app that uses Google Sheets as a databa
 ✅ **100% Free** - Hosted on GitHub Pages, data in your own Google Sheet  
 ✅ **Your Data** - Everything stays in your Google account  
 
-## Demo
-
-[Live Demo](https://your-username.github.io/workout-tracker/) *(coming soon - use your own deployment)*
-
 ## Quick Start
 
 ### 1. Set Up Google Sheet
@@ -47,16 +43,7 @@ Create a Google Sheet with two sheets:
 
 ## How It Works
 
-```
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│   Browser   │────────▶│ Google OAuth │────────▶│  Your Data  │
-│             │  Auth   │   + Sheets   │  Read/  │             │
-│ (Workout    │  Flow   │     API      │  Write  │ (Google     │
-│  Tracker)   │◀────────│              │◀────────│  Sheet)     │
-└─────────────┘         └──────────────┘         └─────────────┘
-```
-
-- Static HTML/CSS/JavaScript (no server needed)
+- Static HTML/CSS/JavaScript (no API server needed)
 - OAuth 2.0 for secure authentication
 - Data stored in your own Google Sheet
 - API calls made directly from browser using Google's JavaScript client
@@ -89,27 +76,6 @@ Pull Day  | Pull-ups       | Slow negative | 4
 ### Change Rest Timer
 Settings → Default Rest Time → Set your preference
 
-### Styling
-The app uses CSS variables - edit the `:root` section in `index.html` to customize colors.
-
-## Privacy & Security
-
-- ✅ OAuth 2.0 authentication - more secure than API keys
-- ✅ You authenticate with your Google account
-- ✅ App only requests access to your spreadsheet
-- ✅ No data sent to external servers (except Google's APIs)
-- ✅ Source code is public, credentials stay private
-- ✅ You can revoke access anytime from Google Account settings
-
-**Note:** The app uses OAuth 2.0 which is the recommended secure way to access Google APIs. You'll sign in with your Google account and authorize the app to access only your workout spreadsheet.
-
-## Browser Compatibility
-
-- ✅ Chrome/Edge (recommended)
-- ✅ Safari (iOS/macOS)
-- ✅ Firefox
-- ✅ Mobile browsers
-
 ## Roadmap
 
 - [ ] Offline support with service workers
@@ -119,24 +85,7 @@ The app uses CSS variables - edit the `:root` section in `index.html` to customi
 - [ ] Plate calculator
 - [ ] Volume tracking and analytics
 
-## Contributing
-
-Contributions welcome! This is a simple, single-file app so it's easy to modify:
-1. Fork the repo
-2. Make your changes to `index.html`
-3. Test locally
-4. Submit a PR
 
 ## License
 
 MIT License - feel free to use, modify, and distribute.
-
-## Credits
-
-Built for lifters who want a simple, free, no-BS workout tracker that works on mobile and respects their data ownership.
-
----
-
-**Questions?** Open an issue or check the [setup guide](SETUP_GUIDE.md).
-
-**Like this project?** Star it ⭐ and share with your gym buddies!
