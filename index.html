@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com http://localhost:8000 https://content-sheets.googleapis.com; frame-src https://accounts.google.com https://content-sheets.googleapis.com;">
+    <title>Workout Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Workout Tracker</h1>
+            <div class="subtitle">Track your progress, one rep at a time</div>
+        </header>
+
+        <!-- Setup Screen -->
+        <div id="setupScreen" class="setup-screen">
+            <h2>Setup Required</h2>
+            
+            <div class="setup-step">
+                <h3>Step 1: Create Google Sheets Template</h3>
+                <p>Create a new Google Sheet with the following structure:</p>
+                <p><strong>Sheet 1: "Routines"</strong></p>
+                <p>Columns: <code>RoutineName</code>, <code>ExerciseName</code>, <code>Notes</code>, <code>DefaultSets</code></p>
+                <p><strong>Sheet 2: "WorkoutLog"</strong></p>
+                <p>Columns: <code>Date</code>, <code>Routine</code>, <code>Exercise</code>, <code>SetNumber</code>, <code>Weight</code>, <code>Reps</code>, <code>Notes</code></p>
+            </div>
+
+            <div class="setup-step">
+                <h3>Step 2: Create OAuth 2.0 Credentials</h3>
+                <p>1. Go to <a href="https://console.cloud.google.com/" target="_blank" style="color: var(--accent-primary);">Google Cloud Console</a></p>
+                <p>2. Create a new project or select existing</p>
+                <p>3. Enable "Google Sheets API"</p>
+                <p>4. Go to "APIs & Services" → "Credentials"</p>
+                <p>5. Click "Create Credentials" → "OAuth client ID"</p>
+                <p>6. If prompted, configure the OAuth consent screen:</p>
+                <p style="margin-left: 20px;">- User type: External</p>
+                <p style="margin-left: 20px;">- Add your email as a test user</p>
+                <p style="margin-left: 20px;">- Scopes: Just use default (no need to add specific scopes)</p>
+                <p>7. Application type: "Web application"</p>
+                <p>8. Add Authorized JavaScript origins: <code>https://[your-username].github.io</code></p>
+                <p>9. Copy your Client ID (looks like: <code>123456-abc.apps.googleusercontent.com</code>)</p>
+            </div>
+
+            <div class="setup-step">
+                <h3>Step 3: Configure Access</h3>
+                <div class="input-group">
+                    <label>OAuth Client ID</label>
+                    <input type="text" id="clientIdInput" placeholder="Your OAuth 2.0 Client ID">
+                </div>
+                <div class="input-group">
+                    <label>Spreadsheet ID</label>
+                    <input type="text" id="spreadsheetIdInput" placeholder="Found in your sheet URL">
+                    <p style="margin-top: 8px; font-size: 0.85rem; color: var(--text-tertiary);">
+                        From: https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit
+                    </p>
+                </div>
+                <button onclick="saveConfig()">Save Configuration</button>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" class="hidden">
+            <div class="view-switcher">
+                <button class="view-btn active" onclick="switchView('workout')">Workout</button>
+                <button class="view-btn" onclick="switchView('manage')">Manage Routines</button>
+                <button class="view-btn" onclick="switchView('settings')">Settings</button>
+            </div>
+
+            <!-- Workout View -->
+            <div id="workoutView">
+                <div class="routine-selector">
+                    <label>Select Routine</label>
+                    <div id="routineGrid" class="routine-grid">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <div id="exerciseList" class="exercise-list">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Manage Routines View -->
+            <div id="manageView" class="hidden">
+                <div class="manage-routines">
+                    <div id="statusMessage"></div>
+                    <div id="routineManagement">
+                        <!-- Dynamically populated -->
+                    </div>
+                    <button onclick="addNewRoutine()">+ Add New Routine</button>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="hidden">
+                <div class="routine-editor">
+                    <h3>Settings</h3>
+                    <div class="input-group">
+                        <label>OAuth Client ID</label>
+                        <input type="text" id="settingsClientId" placeholder="Your OAuth 2.0 Client ID">
+                    </div>
+                    <div class="input-group">
+                        <label>Spreadsheet ID</label>
+                        <input type="text" id="settingsSpreadsheetId" placeholder="Found in your sheet URL">
+                    </div>
+                    <div class="input-group">
+                        <label>Default Rest Time (seconds)</label>
+                        <input type="number" id="defaultRestTime" value="90" min="0">
+                    </div>
+                    <div class="action-buttons">
+                        <button onclick="saveConfig()">Save Changes</button>
+                        <button class="secondary" onclick="handleSignoutClick()">Sign Out</button>
+                        <button class="secondary" onclick="clearConfig()">Reset Configuration</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rest Timer (appears when active) -->
+        <div id="restTimer" class="rest-timer hidden">
+            <div class="timer-display" id="timerDisplay">1:30</div>
+            <div class="timer-controls">
+                <button class="timer-btn secondary" onclick="stopTimer()">Stop</button>
+                <button class="timer-btn" onclick="addTime(30)">+30s</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
