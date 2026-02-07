@@ -12,6 +12,23 @@
     --warning: #ffaa00;
 }
 
+:root.tess-mode {
+    --bg-primary: #65285d;      /* Deep purple - darkest for main background */
+    --bg-secondary: #7a3370;    /* Slightly lighter purple for secondary surfaces */
+    --bg-elevated: #8a4080;     /* Even lighter purple for elevated elements */
+    
+    --text-primary: #f6b9d8;    /* Light pink - highest contrast for primary text */
+    --text-secondary: #d648a3;  /* Medium pink for secondary text */
+    --text-tertiary: #e764a3;   /* Darker pink for tertiary text */
+    
+    --accent-primary: #6adcea;  /* Bright cyan - stands out nicely */
+    --accent-secondary: #5ac4d8; /* Slightly darker cyan */
+    
+    --border: #d930c3;          /* Purple border to blend with backgrounds */
+    --error: #ff4444;           /* Keep existing red */
+    --warning: #ffaa00;         /* Keep existing orange */ 
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -548,4 +565,24 @@ button.secondary:hover {
 
 .hidden {
     display: none !important;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-style: italic;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.subtitle-secondary {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-style: italic;
+    font-weight: bold;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
 }

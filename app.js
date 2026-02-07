@@ -2,8 +2,20 @@
 let config = {
     clientId: '',
     spreadsheetId: '',
-    defaultRestTime: 90
+    defaultRestTime: 90,
+    tessMode: false,
 };
+
+// Constants
+let flavorText = [
+    {main: "\"Victorious warriors win first and then go to war\"", secondary: "The Art of War"},
+    {main: "\"In the midst of chaos, there is also opportunity\"", secondary: "The Art of War"},
+    {main: "\"Discipline is the soul of an army\"", secondary: "The Art of War"},
+    {main: "\"If you know yourself, you need not fear the result of a hundred battles\"", secondary: "The Art of War"},
+    {main: "\"The slowest march is better than standing still\"", secondary: "The Art of War"},
+    {main: "\"Supreme excellence consists of breaking the enemy's resistance without fighting\"", secondary: "The Art of War"},
+    {main: "¯\\_(ツ)_/¯", secondary: "Ran Out of Quotes"},
+]
 
 // OAuth & State
 let tokenClient;
@@ -16,6 +28,7 @@ let currentRoutine = null;
 let currentWorkout = {};
 let timerInterval = null;
 let timeRemaining = 0;
+let timerWorker = new Worker('timer.js'); 
 
 // Initialize
 function init() {
@@ -45,6 +58,11 @@ function init() {
     } else if (config.clientId && config.spreadsheetId) {
         initializeGoogleAPI();
     }
+
+    // choose random flavor text
+    flavor = flavorText[Math.floor(Math.random()*flavorText.length)];
+    document.getElementById("subtitleFlavorText").innerHTML = flavor.main;
+    document.getElementById("subtitleFlavorTextSecondary").innerHTML = flavor.secondary;
 }
 
 // Initialize Google API
@@ -132,6 +150,10 @@ function loadConfig() {
         document.getElementById('settingsClientId').value = config.clientId || '';
         document.getElementById('settingsSpreadsheetId').value = config.spreadsheetId || '';
         document.getElementById('defaultRestTime').value = config.defaultRestTime || 90;
+        document.getElementById('tessMode').checked = config.tessMode;
+    }
+    if (config.tessMode) {
+        document.documentElement.classList.toggle('tess-mode');
     }
 }
 
@@ -139,13 +161,14 @@ function saveConfig() {
     const clientId = document.getElementById('clientIdInput')?.value || document.getElementById('settingsClientId').value;
     const spreadsheetId = document.getElementById('spreadsheetIdInput')?.value || document.getElementById('settingsSpreadsheetId').value;
     const restTime = document.getElementById('defaultRestTime')?.value || 90;
+    const tessMode = document.getElementById('tessMode')?.checked || false;
 
     if (!clientId || !spreadsheetId) {
         showStatus('Please enter both Client ID and Spreadsheet ID', 'error');
         return;
     }
 
-    config = { clientId, spreadsheetId, defaultRestTime: parseInt(restTime) };
+    config = { clientId, spreadsheetId, defaultRestTime: parseInt(restTime), tessMode: tessMode, };
     localStorage.setItem('workoutTrackerConfig', JSON.stringify(config));
     
     // Reload to re-initialize OAuth
@@ -372,27 +395,27 @@ function addSet(exercise) {
 }
 
 // Timer
+timerWorker.onmessage = function(e) {
+    if (e.data.type === 'tick') {
+        timeRemaining = e.data.timeRemaining;
+        updateTimerDisplay();
+    } else if (e.data.type === 'complete') {
+        stopTimer();
+        try {
+            navigator.vibrate([200, 100, 200]);
+        } catch (error) {
+            console.log("tried to vibrate but device doesn't support it");
+        }
+    }
+};
+
 function startTimer(seconds) {
     timeRemaining = seconds;
     document.getElementById('restTimer').classList.remove('hidden');
     updateTimerDisplay();
     
-    if (timerInterval) clearInterval(timerInterval);
-    
-    timerInterval = setInterval(() => {
-        timeRemaining--;
-        updateTimerDisplay();
-        
-        if (timeRemaining <= 0) {
-            stopTimer();
-            try {
-                navigator.vibrate([200, 100, 200]);
-            } catch (error) {
-                console.log("tried to vibrate but device doesn't support it");
-            }
-            // Optional: play sound or vibrate
-        }
-    }, 1000);
+    // Single worker handles "only one timer" requirement
+    timerWorker.postMessage({ action: 'start', seconds });
 }
 
 function updateTimerDisplay() {
@@ -403,13 +426,12 @@ function updateTimerDisplay() {
 }
 
 function stopTimer() {
-    if (timerInterval) clearInterval(timerInterval);
+    timerWorker.postMessage({ action: 'stop' });
     document.getElementById('restTimer').classList.add('hidden');
 }
 
 function addTime(seconds) {
-    timeRemaining += seconds;
-    updateTimerDisplay();
+    timerWorker.postMessage({ action: 'add', seconds });
 }
 
 // Save Workout

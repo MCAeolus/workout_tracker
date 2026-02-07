@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com http://localhost:8000 https://content-sheets.googleapis.com; frame-src https://accounts.google.com https://content-sheets.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com http://localhost:8000 https://content-sheets.googleapis.com; frame-src https://accounts.google.com https://content-sheets.googleapis.com; worker-src 'self';">
     <title>Workout Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
@@ -14,7 +14,8 @@
     <div class="container">
         <header>
             <h1>Workout Tracker</h1>
-            <div class="subtitle">Track your progress, one rep at a time</div>
+            <div class="subtitle" id="subtitleFlavorText">*placeholder*</div>
+            <div class="subtitle-secondary" id="subtitleFlavorTextSecondary">The Art of War</div>
         </header>
 
         <!-- Setup Screen -->
@@ -112,6 +113,9 @@
                     <div class="input-group">
                         <label>Default Rest Time (seconds)</label>
                         <input type="number" id="defaultRestTime" value="90" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Spirit Blossom Mode  <input type="checkbox" id="tessMode"/></label>
                     </div>
                     <div class="action-buttons">
                         <button onclick="saveConfig()">Save Changes</button>
