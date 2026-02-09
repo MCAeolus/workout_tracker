@@ -236,15 +236,19 @@ async function loadWorkoutLog() {
 }
 
 async function saveWorkoutLog(entries) {
-    const rows = entries.map(e => [
-        e.date,
-        e.routine,
-        e.exercise,
-        e.setNumber,
-        e.weight,
-        e.reps,
-        e.notes
-    ]);
+    const rows = entries.map(e => {
+        const [name1, name2] = e.exercise.split(";")
+        return [
+            e.date,
+            e.routine,
+            name1,
+            name2,
+            e.setNumber,
+            e.weight,
+            e.reps,
+            e.notes
+        ];
+    });
 
     const response = await gapi.client.sheets.spreadsheets.values.append({
         spreadsheetId: config.spreadsheetId,
@@ -412,7 +416,7 @@ function createExerciseContent(exercise, exerciseName, activeSecondary, containe
     const template = document.getElementById('exercise-content-template');
     const content = template.content.cloneNode(true).querySelector('.exercise-content');
     
-    const exerciseKey = `${exercise.exerciseName}${exercise.secondaryName ? '-' + exercise.secondaryName : ''}`;
+    const exerciseKey = `${exercise.exerciseName}${exercise.secondaryName ? ';' + exercise.secondaryName : ''}`;
     
     // Set data attributes
     content.dataset.exercise = exerciseName;
