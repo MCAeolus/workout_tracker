@@ -50,12 +50,13 @@ function init() {
                 expires_at: Date.now() + (parseInt(expiresIn) * 1000)
             };
             localStorage.setItem('workoutTrackerToken', JSON.stringify(tokenInfo));
-            initializeGoogleAPI();
 
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-    } else if (config.clientId && config.spreadsheetId) {
+    }
+
+    if (config.clientId && config.spreadsheetId) {
         initializeGoogleAPI();
     }
 
@@ -101,10 +102,10 @@ function initializeGoogleAPI() {
             document.getElementById('mainApp').classList.remove('hidden');
             
             // Show a "Sign In Required" message
-            showStatus('Please sign in to access your workout data', 'error');
+            showStatus('Please sign in to access your workout data (redirecting)', 'error');
             
             // Optionally auto-trigger auth (comment out if you want manual)
-            setTimeout(() => handleAuthClick(), 1000);
+            handleAuthClick();
         }
     });
 }
@@ -168,7 +169,7 @@ function saveConfig() {
         return;
     }
 
-    config = { clientId, spreadsheetId, defaultRestTime: parseInt(restTime), tessMode: tessMode, };
+    config = { clientId, spreadsheetId, defaultRestTime: parseInt(restTime), tessMode, };
     localStorage.setItem('workoutTrackerConfig', JSON.stringify(config));
     
     // Reload to re-initialize OAuth
@@ -205,8 +206,9 @@ async function loadRoutines() {
         routines = rows.map(row => ({
             routineName: row[0],
             exerciseName: row[1],
-            notes: row[2] || '',
-            defaultSets: parseInt(row[3]) || 3
+            secondaryName: row[2],
+            notes: row[3] || '',
+            defaultSets: parseInt(row[4]) || 3
         }));
     }
 }
@@ -224,10 +226,11 @@ async function loadWorkoutLog() {
             date: row[0],
             routine: row[1],
             exercise: row[2],
-            setNumber: parseInt(row[3]),
-            weight: parseFloat(row[4]),
-            reps: parseInt(row[5]),
-            notes: row[6] || ''
+            secondaryExercise: row[3],
+            setNumber: parseInt(row[4]),
+            weight: parseFloat(row[5]),
+            reps: parseInt(row[6]),
+            notes: row[7] || ''
         }));
     }
 }
@@ -282,7 +285,7 @@ function renderRoutines() {
     grid.innerHTML = uniqueRoutines.map(name => {
         const exercises = routines.filter(r => r.routineName === name);
         return `
-            <div class="routine-card" onclick="selectRoutine('${name}')">
+            <div class="routine-card" onclick="selectRoutine(event, '${name}')">
                 <div class="routine-name">${name}</div>
                 <div class="routine-exercises">${exercises.length} exercises</div>
             </div>
@@ -290,7 +293,7 @@ function renderRoutines() {
     }).join('');
 }
 
-function selectRoutine(name) {
+function selectRoutine(event, name) {
     currentRoutine = name;
     currentWorkout = {};
     
@@ -302,66 +305,344 @@ function selectRoutine(name) {
     renderExercises();
 }
 
+
 function renderExercises() {
     const exercises = routines.filter(r => r.routineName === currentRoutine);
     const list = document.getElementById('exerciseList');
     
-    list.innerHTML = exercises.map((ex, idx) => {
-        const previous = getPreviousPerformance(ex.exerciseName);
-        const sets = currentWorkout[ex.exerciseName] || Array(ex.defaultSets).fill().map(() => ({
-            weight: '',
-            reps: '',
-            completed: false
-        }));
+    // Clear existing content
+    list.innerHTML = '';
+    
+    // Store currently active tabs
+    const activeTabs = {};
+    document.querySelectorAll('.exercise-content.active').forEach(content => {
+        activeTabs[content.dataset.exercise] = content.dataset.secondary;
+    });
+    
+    // Group exercises
+    const groupedExercises = {};
+    exercises.forEach(ex => {
+        if (!groupedExercises[ex.exerciseName]) {
+            groupedExercises[ex.exerciseName] = [];
+        }
+        groupedExercises[ex.exerciseName].push(ex);
+    });
+    
+    // Create exercise groups
+    for (const [exerciseName, groupExercises] of Object.entries(groupedExercises)) {
+        const groupElement = createExerciseGroup(exerciseName, groupExercises, activeTabs);
+        list.appendChild(groupElement);
+    }
+    
+    // Add finish button
+    const finishBtn = document.createElement('button');
+    finishBtn.textContent = 'Finish Workout';
+    finishBtn.style.marginTop = '24px';
+    finishBtn.onclick = finishWorkout;
+    list.appendChild(finishBtn);
+}
+
+function createExerciseGroup(exerciseName, groupExercises, activeTabs) {
+    const template = document.getElementById('exercise-group-template');
+    const clone = template.content.cloneNode(true);
+    
+    // IMPORTANT: Get the container element before modifying
+    const container = clone.querySelector('.exercise-item');
+    
+    // Set exercise name
+    container.querySelector('.exercise-name').textContent = exerciseName;
+    
+    // Determine active variation
+    const activeSecondary = activeTabs[exerciseName] ?? (groupExercises[0].secondaryName || '');
+    const activeExercise = groupExercises.find(ex => (ex.secondaryName || '') === activeSecondary);
+    
+    // Set previous performance
+    const previous = getPreviousPerformance(activeExercise.exerciseName, activeExercise.secondaryName);
+    const prevElement = container.querySelector('.previous-performance');
+    if (previous) {
+        prevElement.classList.remove('hidden');
+        prevElement.querySelector('.previous-value').textContent = previous;
+    }
+
         
-        currentWorkout[ex.exerciseName] = sets;
+    // Add notes if present
+    if (activeExercise.notes) {
+        const notesElement = container.querySelector('.exercise-notes');
+        notesElement.textContent = activeExercise.notes;
+        notesElement.classList.remove('hidden');
+    }
+    
+    // Create tabs if multiple variations
+    const tabsContainer = container.querySelector('.exercise-tabs');
+    if (groupExercises.length > 1) {
+        tabsContainer.classList.remove('hidden');
+        groupExercises.forEach(ex => {
+            const tab = createExerciseTab(ex, exerciseName, activeSecondary);
+            tabsContainer.appendChild(tab);
+        });
+    }
+    
+    // Create content for each variation
+    const contentWrapper = container.querySelector('.exercise-content-wrapper');
+    groupExercises.forEach((ex, idx) => {
+        const content = createExerciseContent(ex, exerciseName, activeSecondary, container);
+        contentWrapper.appendChild(content);
+    });
+    
+    return clone;
+}
+
+function createExerciseTab(exercise, exerciseName, activeSecondary) {
+    const template = document.getElementById('exercise-tab-template');
+    const tab = template.content.cloneNode(true).querySelector('.exercise-tab');
+    
+    const displayName = exercise.secondaryName || exerciseName;
+    tab.textContent = displayName;
+    
+    if ((exercise.secondaryName || '') === activeSecondary) {
+        tab.classList.add('active');
+    }
+    
+    tab.onclick = (e) => switchExerciseTab(exercise, e);
+    
+    return tab;
+}
+
+function createExerciseContent(exercise, exerciseName, activeSecondary, container) {
+    const template = document.getElementById('exercise-content-template');
+    const content = template.content.cloneNode(true).querySelector('.exercise-content');
+    
+    const exerciseKey = `${exercise.exerciseName}${exercise.secondaryName ? '-' + exercise.secondaryName : ''}`;
+    
+    // Set data attributes
+    content.dataset.exercise = exerciseName;
+    content.dataset.secondary = exercise.secondaryName || '';
+    
+    // Set active state
+    if ((exercise.secondaryName || '') === activeSecondary) {
+        content.classList.add('active');
+    }
+    
+    // Create sets
+    const sets = currentWorkout[exerciseKey] || Array(exercise.defaultSets).fill().map(() => ({
+        weight: '',
+        reps: '',
+        completed: false
+    }));
+    currentWorkout[exerciseKey] = sets;
+    
+    const setsContainer = content.querySelector('.sets-container');
+    sets.forEach((set, idx) => {
+        const setRow = createSetRow(set, idx, exerciseKey);
+        setsContainer.appendChild(setRow);
+    });
+    
+    // Add "Add Set" button
+    const addSetBtn = document.createElement('button');
+    addSetBtn.className = 'add-set-btn';
+    addSetBtn.textContent = '+ Add Set';
+    addSetBtn.onclick = () => addSet(exerciseKey);
+    setsContainer.appendChild(addSetBtn);
+    
+    // Setup notes textarea
+    const notesInput = content.querySelector('.exercise-notes-input');
+    notesInput.value = currentWorkout[exerciseKey + '_notes'] || '';
+    notesInput.onchange = (e) => updateExerciseNotes(exerciseKey, e.target.value);
+    
+    return content;
+}
+
+function createSetRow(set, setIdx, exerciseKey) {
+    const template = document.getElementById('set-row-template');
+    const row = template.content.cloneNode(true).querySelector('.set-row');
+    
+    // Set number
+    row.querySelector('.set-number').textContent = setIdx + 1;
+    
+    // Weight input
+    const weightInput = row.querySelectorAll('.set-input')[0];
+    weightInput.value = set.weight;
+    weightInput.onchange = (e) => updateSet(exerciseKey, setIdx, 'weight', e.target.value);
+    
+    // Reps input
+    const repsInput = row.querySelectorAll('.set-input')[1];
+    repsInput.value = set.reps;
+    repsInput.onchange = (e) => updateSet(exerciseKey, setIdx, 'reps', e.target.value);
+    
+    // Complete button
+    const completeBtn = row.querySelector('.set-complete-btn');
+    if (set.completed) {
+        completeBtn.classList.add('completed');
+    }
+    completeBtn.onclick = () => toggleSetComplete(exerciseKey, setIdx);
+    
+    return row;
+}
+
+
+
+/*
+function renderExercises() {
+    const exercises = routines.filter(r => r.routineName === currentRoutine);
+    const list = document.getElementById('exerciseList');
+    
+    // Store currently active tabs before re-rendering
+    const activeTabs = {};
+    document.querySelectorAll('.exercise-content.active').forEach(content => {
+        const exerciseName = content.dataset.exercise;
+        const secondaryName = content.dataset.secondary;
+        activeTabs[exerciseName] = secondaryName;
+    });
+    
+    // Group exercises by primary exercise name
+    const groupedExercises = {};
+    exercises.forEach(ex => {
+        if (ex.exerciseName in groupedExercises) {
+            groupedExercises[ex.exerciseName].push(ex);
+        } else {
+            groupedExercises[ex.exerciseName] = [ex];
+        }
+    });
+    
+    let finalHTML = "";
+    
+    // Iterate through each exercise group
+    for (const [exerciseName, groupExercises] of Object.entries(groupedExercises)) {
+        // Determine which tab should be active (preserve previous selection or default to first)
+        const activeSecondary = activeTabs[exerciseName] !== undefined ? activeTabs[exerciseName] : (groupExercises[0].secondaryName || '');
         
-        return `
-            <div class="exercise-item">
-                <div class="exercise-header">
-                    <div class="exercise-info">
-                        <h3>${ex.exerciseName}</h3>
-                        ${ex.notes ? `<div class="exercise-notes">${ex.notes}</div>` : ''}
-                    </div>
+        // Create tabs for each variation in the group
+        const tabsHTML = groupExercises.map((ex, idx) => {
+            const tabId = `${exerciseName}-${ex.secondaryName || 'default'}`.replace(/\s/g, '-');
+            const isActive = (ex.secondaryName || '') === activeSecondary ? 'active' : '';
+            const displayName = ex.secondaryName || exerciseName;
+            return `
+                <button class="exercise-tab ${isActive}" 
+                    onclick="switchExerciseTab('${exerciseName}', '${ex.secondaryName || ''}', event)">
+                    ${displayName}
+                </button>
+            `;
+        }).join('');
+        
+        // Create content for each variation
+        const contentHTML = groupExercises.map((ex, idx) => {
+            const isActive = (ex.secondaryName || '') === activeSecondary ? 'active' : '';
+            const exerciseKey = `${ex.exerciseName}${ex.secondaryName ? '-' + ex.secondaryName : ''}`;
+            const previous = getPreviousPerformance(ex.exerciseName, ex.secondaryName);
+            const sets = currentWorkout[exerciseKey] || Array(ex.defaultSets).fill().map(() => ({
+                weight: '',
+                reps: '',
+                completed: false
+            }));
+            
+            currentWorkout[exerciseKey] = sets;
+            
+            return `
+                <div class="exercise-content ${isActive}" data-exercise="${exerciseName}" data-secondary="${ex.secondaryName || ''}">
                     ${previous ? `
                         <div class="previous-performance">
                             <div class="previous-label">Last Workout</div>
                             <div>${previous}</div>
                         </div>
                     ` : ''}
+                    ${ex.notes ? `<div class="exercise-notes" style="margin-bottom: 12px;">${ex.notes}</div>` : ''}
+                    <div class="sets-container">
+                        ${sets.map((set, setIdx) => `
+                            <div class="set-row">
+                                <div class="set-number">${setIdx + 1}</div>
+                                <input type="number" class="set-input" placeholder="Weight" 
+                                    value="${set.weight}" 
+                                    onchange="updateSet('${exerciseKey}', ${setIdx}, 'weight', this.value)"
+                                    step="0.5">
+                                <input type="number" class="set-input" placeholder="Reps" 
+                                    value="${set.reps}"
+                                    onchange="updateSet('${exerciseKey}', ${setIdx}, 'reps', this.value)">
+                                <button class="set-complete-btn ${set.completed ? 'completed' : ''}"
+                                    onclick="toggleSetComplete('${exerciseKey}', ${setIdx})">
+                                    ✓
+                                </button>
+                            </div>
+                        `).join('')}
+                        <button class="add-set-btn" onclick="addSet('${exerciseKey}')">+ Add Set</button>
+                    </div>
+                    <textarea class="exercise-notes-input" placeholder="Notes (form, fatigue, etc...)"
+                        onchange="updateExerciseNotes('${exerciseKey}', this.value)">${currentWorkout[exerciseKey + '_notes'] || ''}</textarea>
                 </div>
-                <div class="sets-container">
-                    ${sets.map((set, setIdx) => `
-                        <div class="set-row">
-                            <div class="set-number">${setIdx + 1}</div>
-                            <input type="number" class="set-input" placeholder="Weight" 
-                                value="${set.weight}" 
-                                onchange="updateSet('${ex.exerciseName}', ${setIdx}, 'weight', this.value)"
-                                step="0.5">
-                            <input type="number" class="set-input" placeholder="Reps" 
-                                value="${set.reps}"
-                                onchange="updateSet('${ex.exerciseName}', ${setIdx}, 'reps', this.value)">
-                            <button class="set-complete-btn ${set.completed ? 'completed' : ''}"
-                                onclick="toggleSetComplete('${ex.exerciseName}', ${setIdx})">
-                                ✓
-                            </button>
-                        </div>
-                    `).join('')}
-                    <button class="add-set-btn" onclick="addSet('${ex.exerciseName}')">+ Add Set</button>
+            `;
+        }).join('');
+        
+        // Combine into exercise group card
+        finalHTML += `
+            <div class="exercise-item">
+                <div class="exercise-header">
+                    <h3>${exerciseName}</h3>
                 </div>
-                <textarea class="exercise-notes-input" placeholder="Notes (form, fatigue, etc...)"
-                    onchange="updateExerciseNotes('${ex.exerciseName}', this.value)">${currentWorkout[ex.exerciseName + '_notes'] || ''}</textarea>
+                ${groupExercises.length > 1 ? `
+                    <div class="exercise-tabs">
+                        ${tabsHTML}
+                    </div>
+                ` : ''}
+                <div class="exercise-content-wrapper">
+                    ${contentHTML}
+                </div>
             </div>
         `;
-    }).join('') + `
-    <div>
-        <button onclick="finishWorkout()">Finish</button>
-    </div>`;
+    }
+    
+    finalHTML += `
+        <div style="margin-top: 24px;">
+            <button onclick="finishWorkout()">Finish Workout</button>
+        </div>
+    `;
+    
+    list.innerHTML = finalHTML;
+}
+*/
+// Helper function to switch between exercise variations
+function switchExerciseTab(exercise, event) {
+    // Update active tab
+    exerciseName = exercise.exerciseName
+    secondaryName = exercise.secondaryName
+    const tabButtons = event.target.parentElement.querySelectorAll('.exercise-tab');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+
+    const exerciseItem = event.target.closest('.exercise-item');
+    // Update active content
+    const contentWrapper = exerciseItem.querySelector('.exercise-content-wrapper');
+    const contents = contentWrapper.querySelectorAll('.exercise-content');
+    contents.forEach(content => {
+        if (content.dataset.exercise === exerciseName && content.dataset.secondary === secondaryName) {
+            content.classList.add('active');
+        } else {
+            content.classList.remove('active');
+        }
+    });
+
+    // Update notes
+    const notesWrapper = exerciseItem.querySelector('.exercise-notes')
+    if (exercise.notes) {
+        notesWrapper.classList.remove('hidden');
+        notesWrapper.textContent = exercise.notes;
+    } else {
+        notesWrapper.classList.add('hidden');
+    }
+
+    // Update previous performance in header
+    prev = getPreviousPerformance(exerciseName, secondaryName);
+    const prevContainer = exerciseItem.querySelector('.previous-performance');
+    if (prev) {
+        prevContainer.querySelector('.previous-value').textContent = prev;
+        prevContainer.classList.remove('hidden');
+    } else {
+        prevContainer.classList.add('hidden');
+    }
 }
 
-function getPreviousPerformance(exerciseName) {
+function getPreviousPerformance(exerciseName, secondaryExercise) {
     const previousSets = workoutLog
-        .filter(log => log.exercise === exerciseName)
+        .filter(log => log.exercise === exerciseName && log.secondaryExercise === secondaryExercise)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, 3);
     

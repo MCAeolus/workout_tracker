@@ -136,6 +136,43 @@
         </div>
     </div>
 
+    <!-- Templates -->
+    <template id="exercise-group-template">
+        <div class="exercise-item">
+            <div class="exercise-header">
+                <div class="exercise-info">
+                    <h3 class="exercise-name"></h3>
+                </div>
+                <div class="previous-performance hidden">
+                    <div class="previous-label">Last Workout</div>
+                    <div class="previous-value"></div>
+                </div>
+            </div>
+            <div class="exercise-tabs hidden"></div>
+            <div class="exercise-notes hidden"></div>
+            <div class="exercise-content-wrapper"></div>
+        </div>
+    </template>
+
+    <template id="exercise-tab-template">
+        <button class="exercise-tab"></button>
+    </template>
+
+    <template id="exercise-content-template">
+        <div class="exercise-content">
+             <div class="sets-container"></div>
+            <textarea class="exercise-notes-input" placeholder="Notes (form, fatigue, etc...)"></textarea>
+        </div>
+    </template>
+
+    <template id="set-row-template">
+        <div class="set-row">
+            <div class="set-number"></div>
+            <input type="number" class="set-input" placeholder="Weight" step="0.5">
+            <input type="number" class="set-input" placeholder="Reps">
+            <button class="set-complete-btn">✓</button>
+        </div>
+    </template>
     <script src="app.js"></script>
 </body>
 </html>
