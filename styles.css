@@ -501,6 +501,13 @@ button.secondary:hover {
     display: flex;
     gap: 12px;
     margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 800px) {
+    .action-buttons button {
+        flex: 1 1 100%;
+    }
 }
 
 .status-message {
