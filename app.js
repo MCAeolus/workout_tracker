@@ -17,7 +17,7 @@ let flavorText = [
     {main: "¯\\_(ツ)_/¯", secondary: "Ran Out of Quotes"},
 ]
 
-// OAuth & State
+// OAuth State 
 let tokenClient;
 let accessToken = null;
 
@@ -29,6 +29,7 @@ let currentWorkout = {};
 let timerInterval = null;
 let timeRemaining = 0;
 let timerWorker = new Worker('timer.js'); 
+let activeTabs = {};
 
 // Initialize
 function init() {
@@ -317,12 +318,6 @@ function renderExercises() {
     // Clear existing content
     list.innerHTML = '';
     
-    // Store currently active tabs
-    const activeTabs = {};
-    document.querySelectorAll('.exercise-content.active').forEach(content => {
-        activeTabs[content.dataset.exercise] = content.dataset.secondary;
-    });
-    
     // Group exercises
     const groupedExercises = {};
     exercises.forEach(ex => {
@@ -368,7 +363,6 @@ function createExerciseGroup(exerciseName, groupExercises, activeTabs) {
         prevElement.querySelector('.previous-value').textContent = previous;
     }
 
-        
     // Add notes if present
     if (activeExercise.notes) {
         const notesElement = container.querySelector('.exercise-notes');
@@ -604,6 +598,9 @@ function renderExercises() {
 */
 // Helper function to switch between exercise variations
 function switchExerciseTab(exercise, event) {
+    // update state
+    activeTabs[exercise.exerciseName] = exercise.secondaryName;
+
     // Update active tab
     exerciseName = exercise.exerciseName
     secondaryName = exercise.secondaryName
