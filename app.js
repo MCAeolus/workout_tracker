@@ -796,7 +796,7 @@ async function finishWorkout() {
 
         // remove local storage in case of auth
         localStorage.removeItem('workoutTrackerPendingWorkout');
-        localStroage.removeItem('workoutTrackerPendingRoutine');
+        localStorage.removeItem('workoutTrackerPendingRoutine');
     
         currentWorkout = {};
         await loadWorkoutLog();
