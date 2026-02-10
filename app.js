@@ -16,6 +16,7 @@ let flavorText = [
     {main: "\"Supreme excellence consists of breaking the enemy's resistance without fighting\"", secondary: "The Art of War"},
     {main: "¯\\_(ツ)_/¯", secondary: "Ran Out of Quotes"},
 ]
+const TOKEN_WORKOUT_TRACKER = 'workoutTrackerToken';
 
 // OAuth State 
 let tokenClient;
@@ -50,7 +51,7 @@ function init() {
                 access_token: token,
                 expires_at: Date.now() + (parseInt(expiresIn) * 1000)
             };
-            localStorage.setItem('workoutTrackerToken', JSON.stringify(tokenInfo));
+            localStorage.setItem(TOKEN_WORKOUT_TRACKER, JSON.stringify(tokenInfo));
 
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -76,7 +77,7 @@ function initializeGoogleAPI() {
         });
         
         // Check for stored token
-        const storedToken = localStorage.getItem('workoutTrackerToken');
+        const storedToken = localStorage.getItem(TOKEN_WORKOUT_TRACKER);
         let hasValidToken = false;
         
         if (storedToken) {
@@ -88,7 +89,7 @@ function initializeGoogleAPI() {
                 hasValidToken = true;
             } else {
                 // Token expired, clean it up
-                localStorage.removeItem('workoutTrackerToken');
+                localStorage.removeItem(TOKEN_WORKOUT_TRACKER);
             }
         }
         
@@ -97,6 +98,31 @@ function initializeGoogleAPI() {
             document.getElementById('setupScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
             loadData();
+
+            // if we saved state last time
+            const pendingData = localStorage.getItem('workoutTrackerPendingRoutine');
+            if (pendingData) {
+                const entries = JSON.parse(localStorage.getItem('workoutTrackerPendingWorkout'));
+                if (entries.length == 0) {
+                    localStorage.removeItem('workoutTrackerPendingWorkout');
+                    localStorage.removeItem('workoutTrackerPendingRoutine');
+                    return;
+                }
+                showStatus('Saving previous workout...', 'success');
+
+                try {
+                    await saveWorkoutLog(entries);
+                    localStorage.removeItem('workoutTrackerPendingWorkout');
+                    localStorage.removeItem('workoutTrackerPendingRoutine');
+
+                    showStatus('Successfully saved previous workout.', 'success');
+                } catch (error) {
+                    showStatus('Failed to save previous workout. Local storage still saved, please try again later.', 'error')
+                }
+            }
+
+
+
         } else {
             // Need to authenticate
             document.getElementById('setupScreen').classList.add('hidden');
@@ -109,6 +135,22 @@ function initializeGoogleAPI() {
             handleAuthClick();
         }
     });
+}
+
+function isTokenExpired() {
+    const stored = localStorage.getItem(TOKEN_WORKOUT_TRACKER);
+    if (!stored) return true;
+
+    const tokenInfo = JSON.parse(stored);
+    return tokenInfo.expires_at <= Date.now();
+}
+
+async function ensureValidToken() {
+    if (!isTokenExpired()) return true;
+
+    showStatus('Session expired. Please sign in again...', 'error');
+    handleAuthClick();
+    return false;
 }
 
 function handleAuthClick() {
@@ -137,7 +179,7 @@ function handleSignoutClick() {
         google.accounts.oauth2.revoke(token.access_token, () => {
             gapi.client.setToken(null);
             accessToken = null;
-            localStorage.removeItem('workoutTrackerToken');
+            localStorage.removeItem(TOKEN_WORKOUT_TRACKER);
             document.getElementById('mainApp').classList.add('hidden');
             document.getElementById('setupScreen').classList.remove('hidden');
         });
@@ -743,10 +785,19 @@ async function finishWorkout() {
         showStatus('No completed sets to save', 'error');
         return;
     }
+
+    // store existing workout state for refresh
+    localStorage.setItem('workoutTrackerPendingWorkout', JSON.stringify(entries));
+    localStorage.setItem('workoutTrackerPendingRoutine', currentRoutine);
     
     try {
         await saveWorkoutLog(entries);
         showStatus('Workout saved successfully!', 'success');
+
+        // remove local storage in case of auth
+        localStorage.removeItem('workoutTrackerPendingWorkout');
+        localStroage.removeItem('workoutTrackerPendingRoutine');
+    
         currentWorkout = {};
         await loadWorkoutLog();
         renderExercises();
