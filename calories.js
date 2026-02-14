@@ -220,7 +220,7 @@ function renderCalorieView() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div class="meal-calories">${meal.calories} cal</div>
-                        <button class="delete-meal-btn" onclick="deleteCalorieEntry(event, '${meal.id}')" title="Delete">×</button>
+                        <button class="delete-meal-btn" onclick="deleteCalorieEntry(event, '${meal.id}')" title="Delete"></button>
                     </div>
                 </div>
             `;

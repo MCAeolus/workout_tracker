@@ -811,7 +811,7 @@ button.secondary:hover {
     height: auto;
 }
 
-.delete-meal-btn {
+/*.delete-meal-btn {
     width: 28px;
     height: 28px;
     padding: 0;
@@ -821,6 +821,28 @@ button.secondary:hover {
     color: var(--text-tertiary);
     font-size: 1.5rem;
     line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}*/
+
+.delete-meal-btn::before {
+    content: 'x';
+    display: block;
+}
+
+.delete-meal-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-tertiary);
+    font-size: 1.0rem;
+    line-height: 0;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
