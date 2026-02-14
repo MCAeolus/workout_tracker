@@ -70,10 +70,10 @@
         <!-- Main App -->
         <div id="mainApp" class="hidden">
             <div class="view-switcher">
-                <button class="view-btn active" onclick="switchView('workout')">Workout</button>
-                <button class="view-btn" onclick="switchView('calories')">Calorie Tracking</button>
+                <button class="view-btn active workout-btn" onclick="switchView(event, 'workout')">Workout</button>
+                <button class="view-btn calories-btn" onclick="switchView(event, 'calories')">Calorie Tracking</button>
                 <!--<button class="view-btn" onclick="switchView('manage')">Manage Routines</button> -->
-                <button class="view-btn" onclick="switchView('settings')">Settings</button>
+                <button class="view-btn settings-btn" onclick="switchView(event, 'settings')">Settings</button>
             </div>
 
 

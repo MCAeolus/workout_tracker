@@ -89,6 +89,14 @@ function initializeGoogleAPI() {
             document.getElementById('mainApp').classList.remove('hidden');
             loadData();
 
+            // change tab if set in fragment
+            const fragment = window.location.hash;
+            if (fragment) {
+                //console.log("here:", fragment.substring(1));
+                // handle
+                switchView(null, fragment.substring(1));
+            }
+
             // if we saved state last time
             const pendingData = localStorage.getItem('workoutTrackerPendingRoutine');
             if (pendingData) {
@@ -293,9 +301,14 @@ async function saveWorkoutLog(entries) {
 }
 
 // View Management
-function switchView(view) {
+function switchView(event, view) {
     document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+
+    if (event) {
+        event.target.classList.add('active');
+    } else {
+        document.querySelectorAll(`.view-btn.${view}-btn`).forEach(btn => btn.classList.add('active'));
+    }
 
     document.getElementById('workoutView').classList.add('hidden');
     document.getElementById('calorieView').classList.add('hidden');
