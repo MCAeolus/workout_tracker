@@ -1,10 +1,4 @@
-// Configuration
-let config = {
-    clientId: '',
-    spreadsheetId: '',
-    defaultRestTime: 90,
-    tessMode: false,
-};
+// Configuration -> 02/14 moved to utils.js
 
 // Constants
 let flavorText = [
@@ -17,10 +11,6 @@ let flavorText = [
     {main: "¯\\_(ツ)_/¯", secondary: "Ran Out of Quotes"},
 ]
 const TOKEN_WORKOUT_TRACKER = 'workoutTrackerToken';
-
-// OAuth State 
-let tokenClient;
-let accessToken = null;
 
 // State
 let routines = [];
@@ -120,9 +110,6 @@ function initializeGoogleAPI() {
                     showStatus('Failed to save previous workout. Local storage still saved, please try again later.', 'error')
                 }
             }
-
-
-
         } else {
             // Need to authenticate
             document.getElementById('setupScreen').classList.add('hidden');
@@ -311,11 +298,15 @@ function switchView(view) {
     event.target.classList.add('active');
 
     document.getElementById('workoutView').classList.add('hidden');
+    document.getElementById('calorieView').classList.add('hidden');
     document.getElementById('manageView').classList.add('hidden');
     document.getElementById('settingsView').classList.add('hidden');
 
     if (view === 'workout') {
         document.getElementById('workoutView').classList.remove('hidden');
+    } else if (view === 'calories') {
+        document.getElementById('calorieView').classList.remove('hidden');
+        initCalories();
     } else if (view === 'manage') {
         document.getElementById('manageView').classList.remove('hidden');
         renderManageRoutines();
@@ -800,6 +791,7 @@ async function finishWorkout() {
     
         currentWorkout = {};
         await loadWorkoutLog();
+        window.scrollTo(0,0);
         renderExercises();
     } catch (error) {
         console.error('Error saving workout:', error);
@@ -827,7 +819,7 @@ function addNewRoutine() {
 
 // Status Messages
 function showStatus(message, type) {
-    window.scrollTo(0,0)
+    //window.scrollTo(0,0)
     const statusDiv = document.getElementById('statusMessage');
     statusDiv.innerHTML = `<div class="status-message ${type}">${message}</div>`;
     setTimeout(() => statusDiv.innerHTML = '', 5000);

@@ -510,21 +510,31 @@ button.secondary:hover {
     }
 }
 
+#statusMessage {
+    position: sticky;
+    top: 10px;
+    z-index: 1000;
+    max-width: 600px;
+    width: 90%;
+    margin: 0 auto; /*center*/
+    margin-bottom: 20px;
+}
+
 .status-message {
     padding: 12px 16px;
     border-radius: 8px;
-    margin-bottom: 20px;
     font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
 }
 
 .status-message.success {
-    background: rgba(0, 255, 136, 0.1);
+    background: rgba(0, 255, 136, 0.3);
     border: 1px solid var(--accent-primary);
     color: var(--accent-primary);
 }
 
 .status-message.error {
-    background: rgba(255, 68, 68, 0.1);
+    background: rgba(255, 68, 68, 0.3);
     border: 1px solid var(--error);
     color: var(--error);
 }
@@ -648,4 +658,180 @@ button.secondary:hover {
 
 .exercise-content.active {
     display: block;
+}
+/* Calorie Tracking Styles */
+.calorie-summary {
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.calorie-card {
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-secondary));
+    border: 2px solid var(--accent-primary);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+}
+
+.calorie-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.calorie-value {
+    font-size: 3.5rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent-primary);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.calorie-unit {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+
+.calorie-input-section {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.calorie-input-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.calorie-history {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.calorie-history h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.meal-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.meal-info {
+    flex: 1;
+}
+
+.meal-description {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.meal-time {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.meal-calories {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.calorie-chart-section {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+}
+
+.calorie-chart-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.chart-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.chart-btn {
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.chart-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    transform: none;
+    box-shadow: none;
+}
+
+.chart-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--bg-primary);
+}
+
+#calorieChart {
+    max-width: 100%;
+    height: auto;
+}
+
+.delete-meal-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-tertiary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-meal-btn:hover {
+    background: var(--error);
+    border-color: var(--error);
+    color: var(--text-primary);
+    transform: none;
+    box-shadow: none;
 }

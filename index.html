@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com http://localhost:8000 https://content-sheets.googleapis.com; frame-src https://accounts.google.com https://content-sheets.googleapis.com; worker-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com http://localhost:8000 https://content-sheets.googleapis.com https://cdn.jsdelivr.net; frame-src https://accounts.google.com https://content-sheets.googleapis.com; worker-src 'self';">
     <title>Workout Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
@@ -64,15 +65,17 @@
             </div>
         </div>
 
+        <div id="statusMessage"></div>
+
         <!-- Main App -->
         <div id="mainApp" class="hidden">
             <div class="view-switcher">
                 <button class="view-btn active" onclick="switchView('workout')">Workout</button>
+                <button class="view-btn" onclick="switchView('calories')">Calorie Tracking</button>
                 <button class="view-btn" onclick="switchView('manage')">Manage Routines</button>
                 <button class="view-btn" onclick="switchView('settings')">Settings</button>
             </div>
 
-            <div id="statusMessage"></div>
 
             <!-- Workout View -->
             <div id="workoutView">
@@ -85,6 +88,57 @@
 
                 <div id="exerciseList" class="exercise-list">
                     <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Calorie Tracking View -->
+            <div id="calorieView" class="hidden">
+                <div id="statusMessage"></div>
+                
+                <div class="calorie-summary">
+                    <div class="calorie-card">
+                        <div class="calorie-label">Today's Total</div>
+                        <div class="calorie-value" id="todayTotal">0</div>
+                        <div class="calorie-unit">calories</div>
+                    </div>
+                    <div class="calorie-card">
+                        <div class="calorie-label" id="averageLabel">Daily Average (Week)</div>
+                        <div class="calorie-value" id="averageCalories">0</div>
+                        <div class="calorie-unit">calories/day</div>
+                        <div class="chart-controls" style="margin-bottom: 0px; margin-top: 5px; justify-content: center;">
+                            <button class="chart-btn active" onclick="updateCalorieChart(event, 'week')">Week</button>
+                            <button class="chart-btn" onclick="updateCalorieChart(event, 'month')">Month</button>
+                            <button class="chart-btn" onclick="updateCalorieChart(event, '3months')">3 Months</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calorie-input-section">
+                    <h3>Add Meal</h3>
+                    <div class="input-group">
+                        <label>Meal Description</label>
+                        <input type="text" id="mealDescription" placeholder="e.g., Chicken sandwich with fries">
+                    </div>
+                    <div class="input-group">
+                        <label>Estimated Calories</label>
+                        <input type="number" id="mealCalories" placeholder="e.g., 650" min="0">
+                    </div>
+                    <button type="button" onclick="addCalorieEntry(event)">Add Entry</button>
+                </div>
+
+                <div class="calorie-history">
+                    <h3>Today's Meals</h3>
+                    <div id="todayMealsList"></div>
+                </div>
+
+                <div class="calorie-chart-section">
+                    <h3>Calorie History</h3>
+                    <div class="chart-controls">
+                        <button class="chart-btn active" type="button" onclick="updateCalorieChart(event, 'week')">Week</button>
+                        <button class="chart-btn" type="button" onclick="updateCalorieChart(event, 'month')">Month</button>
+                        <button class="chart-btn" type="button" onclick="updateCalorieChart(event, '3months')">3 Months</button>
+                    </div>
+                    <canvas id="calorieChart"></canvas>
                 </div>
             </div>
 
@@ -173,6 +227,8 @@
             <button class="set-complete-btn">✓</button>
         </div>
     </template>
+    <script src="utils.js"></script>
+    <script src="calories.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
