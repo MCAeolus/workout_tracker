@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com http://localhost:8000 https://content-sheets.googleapis.com https://cdn.jsdelivr.net; frame-src https://accounts.google.com https://content-sheets.googleapis.com; worker-src 'self';">
-    <title>Workout Tracker</title>
+    <title>Fitness Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://apis.google.com/js/api.js"></script>
@@ -14,7 +14,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Workout Tracker</h1>
+            <h1>Fitness Tracker</h1>
             <div class="subtitle" id="subtitleFlavorText">*placeholder*</div>
             <div class="subtitle-secondary" id="subtitleFlavorTextSecondary">The Art of War</div>
         </header>
@@ -117,11 +117,11 @@
                     <h3>Add Meal</h3>
                     <div class="input-group">
                         <label>Meal Description</label>
-                        <input type="text" id="mealDescription" placeholder="e.g., Chicken sandwich with fries">
+                        <input type="text" id="mealDescription" placeholder="e.x. yummy munchie snackie">
                     </div>
                     <div class="input-group">
                         <label>Estimated Calories</label>
-                        <input type="number" id="mealCalories" placeholder="e.g., 650" min="0">
+                        <input type="number" id="mealCalories" placeholder="e.g., 123" min="0">
                     </div>
                     <button type="button" onclick="addCalorieEntry(event)">Add Entry</button>
                 </div>
@@ -214,8 +214,11 @@
 
     <template id="exercise-content-template">
         <div class="exercise-content">
-             <div class="sets-container"></div>
-            <textarea class="exercise-notes-input" placeholder="Notes (form, fatigue, etc...)"></textarea>
+            <div class="sets-container"></div>
+            <div class="exercise-notes-input-row">
+                <textarea class="exercise-notes-input" placeholder="Notes (form, fatigue, etc...)"></textarea>
+                <button class="add-subtype-btn" title="Create new subtype from notes">+</button>
+            </div>
         </div>
     </template>
 

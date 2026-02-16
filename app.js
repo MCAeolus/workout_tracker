@@ -300,6 +300,11 @@ async function saveWorkoutLog(entries) {
     return response.result;
 }
 
+function createExerciseKey(exerciseName, secondaryName) {
+    const exerciseKey = `${exerciseName}${secondaryName ? ';' + secondaryName : ''}`;
+    return exerciseKey;
+}
+
 // View Management
 function switchView(event, view) {
     document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
@@ -432,8 +437,96 @@ function createExerciseGroup(exerciseName, groupExercises, activeTabs) {
         const content = createExerciseContent(ex, exerciseName, activeSecondary, container);
         contentWrapper.appendChild(content);
     });
+
+    const addSubtypeBtn = container.querySelector('.add-subtype-btn');
+    addSubtypeBtn.onclick = (event) => createSubtypeFromNotes(exerciseName, activeSecondary); 
     
     return clone;
+}
+
+async function createSubtypeFromNotes(exerciseName, currentSecondary) {
+    //const exerciseKey = `${exerciseName}${currentSecondary ? '-' + currentSecondary : ''}`;
+    const exerciseKey = createExerciseKey(exerciseName, currentSecondary);
+    const notes = currentWorkout[exerciseKey + '_notes'];
+    
+    if (!notes || notes.trim() === '') {
+        showStatus('Please enter notes to use as the subtype name', 'error');
+        return;
+    }
+    
+    const subtypeName = notes.trim();
+    
+    // Check if this subtype already exists
+    const exists = routines.some(r => 
+        r.exerciseName === exerciseName && r.secondaryName === subtypeName
+    );
+    
+    if (exists) {
+        showStatus('A subtype with this name already exists', 'error');
+        return;
+    }
+    
+    // Get the current exercise's details
+    const currentExercise = routines.find(r => 
+        r.exerciseName === exerciseName && 
+        (r.secondaryName || '') === currentSecondary
+    );
+    
+    if (!currentExercise) {
+        showStatus('Error: Could not find current exercise', 'error');
+        return;
+    }
+    
+    try {
+        // Add to Google Sheets
+        await appendSheetData('Routines', [[
+            currentRoutine,
+            exerciseName,
+            subtypeName,
+            currentExercise.notes || '',
+            currentExercise.defaultSets
+        ]]);
+        
+        // Add to local routines
+        const newRoutine = {
+            routineName: currentRoutine,
+            exerciseName: exerciseName,
+            secondaryName: subtypeName,
+            notes: currentExercise.notes || '',
+            defaultSets: currentExercise.defaultSets
+        };
+        routines.push(newRoutine);
+        
+        // Copy the current sets to the new subtype
+        const currentSets = currentWorkout[exerciseKey];
+        //const newExerciseKey = `${exerciseName}-${subtypeName}`;
+        const newExerciseKey = createExerciseContent(exerciseName, subtypeName);
+        currentWorkout[newExerciseKey] = JSON.parse(JSON.stringify(currentSets)); // Deep copy
+        currentWorkout[newExerciseKey + '_notes'] = ''; // Clear notes for new subtype
+        
+        // Re-render exercises to show new tab
+        renderExercises();
+        
+        // Switch to the new tab
+        setTimeout(() => {
+            const newTab = Array.from(document.querySelectorAll('.exercise-tab'))
+                .find(btn => btn.textContent === subtypeName);
+            if (newTab) {
+                newTab.click();
+            }
+        }, 100);
+        
+        showStatus(`Created new subtype: ${subtypeName}`, 'success');
+        
+    } catch (error) {
+        console.error('Error creating subtype:', error);
+        if (error.message === 'AUTH_EXPIRED') {
+            showStatus('Session expired. Please sign in again.', 'error');
+            setTimeout(() => handleAuthClick(), 2000);
+        } else {
+            showStatus('Error creating subtype', 'error');
+        }
+    }
 }
 
 function createExerciseTab(exercise, exerciseName, activeSecondary) {
@@ -456,8 +549,8 @@ function createExerciseContent(exercise, exerciseName, activeSecondary, containe
     const template = document.getElementById('exercise-content-template');
     const content = template.content.cloneNode(true).querySelector('.exercise-content');
     
-    const exerciseKey = `${exercise.exerciseName}${exercise.secondaryName ? ';' + exercise.secondaryName : ''}`;
-    
+    //const exerciseKey = `${exercise.exerciseName}${exercise.secondaryName ? ';' + exercise.secondaryName : ''}`;
+    const exerciseKey = createExerciseKey(exercise.exerciseName, exercise.secondaryName);
     // Set data attributes
     content.dataset.exercise = exerciseName;
     content.dataset.secondary = exercise.secondaryName || '';
@@ -523,125 +616,6 @@ function createSetRow(set, setIdx, exerciseKey) {
     return row;
 }
 
-
-
-/*
-function renderExercises() {
-    const exercises = routines.filter(r => r.routineName === currentRoutine);
-    const list = document.getElementById('exerciseList');
-    
-    // Store currently active tabs before re-rendering
-    const activeTabs = {};
-    document.querySelectorAll('.exercise-content.active').forEach(content => {
-        const exerciseName = content.dataset.exercise;
-        const secondaryName = content.dataset.secondary;
-        activeTabs[exerciseName] = secondaryName;
-    });
-    
-    // Group exercises by primary exercise name
-    const groupedExercises = {};
-    exercises.forEach(ex => {
-        if (ex.exerciseName in groupedExercises) {
-            groupedExercises[ex.exerciseName].push(ex);
-        } else {
-            groupedExercises[ex.exerciseName] = [ex];
-        }
-    });
-    
-    let finalHTML = "";
-    
-    // Iterate through each exercise group
-    for (const [exerciseName, groupExercises] of Object.entries(groupedExercises)) {
-        // Determine which tab should be active (preserve previous selection or default to first)
-        const activeSecondary = activeTabs[exerciseName] !== undefined ? activeTabs[exerciseName] : (groupExercises[0].secondaryName || '');
-        
-        // Create tabs for each variation in the group
-        const tabsHTML = groupExercises.map((ex, idx) => {
-            const tabId = `${exerciseName}-${ex.secondaryName || 'default'}`.replace(/\s/g, '-');
-            const isActive = (ex.secondaryName || '') === activeSecondary ? 'active' : '';
-            const displayName = ex.secondaryName || exerciseName;
-            return `
-                <button class="exercise-tab ${isActive}" 
-                    onclick="switchExerciseTab('${exerciseName}', '${ex.secondaryName || ''}', event)">
-                    ${displayName}
-                </button>
-            `;
-        }).join('');
-        
-        // Create content for each variation
-        const contentHTML = groupExercises.map((ex, idx) => {
-            const isActive = (ex.secondaryName || '') === activeSecondary ? 'active' : '';
-            const exerciseKey = `${ex.exerciseName}${ex.secondaryName ? '-' + ex.secondaryName : ''}`;
-            const previous = getPreviousPerformance(ex.exerciseName, ex.secondaryName);
-            const sets = currentWorkout[exerciseKey] || Array(ex.defaultSets).fill().map(() => ({
-                weight: '',
-                reps: '',
-                completed: false
-            }));
-            
-            currentWorkout[exerciseKey] = sets;
-            
-            return `
-                <div class="exercise-content ${isActive}" data-exercise="${exerciseName}" data-secondary="${ex.secondaryName || ''}">
-                    ${previous ? `
-                        <div class="previous-performance">
-                            <div class="previous-label">Last Workout</div>
-                            <div>${previous}</div>
-                        </div>
-                    ` : ''}
-                    ${ex.notes ? `<div class="exercise-notes" style="margin-bottom: 12px;">${ex.notes}</div>` : ''}
-                    <div class="sets-container">
-                        ${sets.map((set, setIdx) => `
-                            <div class="set-row">
-                                <div class="set-number">${setIdx + 1}</div>
-                                <input type="number" class="set-input" placeholder="Weight" 
-                                    value="${set.weight}" 
-                                    onchange="updateSet('${exerciseKey}', ${setIdx}, 'weight', this.value)"
-                                    step="0.5">
-                                <input type="number" class="set-input" placeholder="Reps" 
-                                    value="${set.reps}"
-                                    onchange="updateSet('${exerciseKey}', ${setIdx}, 'reps', this.value)">
-                                <button class="set-complete-btn ${set.completed ? 'completed' : ''}"
-                                    onclick="toggleSetComplete('${exerciseKey}', ${setIdx})">
-                                    ✓
-                                </button>
-                            </div>
-                        `).join('')}
-                        <button class="add-set-btn" onclick="addSet('${exerciseKey}')">+ Add Set</button>
-                    </div>
-                    <textarea class="exercise-notes-input" placeholder="Notes (form, fatigue, etc...)"
-                        onchange="updateExerciseNotes('${exerciseKey}', this.value)">${currentWorkout[exerciseKey + '_notes'] || ''}</textarea>
-                </div>
-            `;
-        }).join('');
-        
-        // Combine into exercise group card
-        finalHTML += `
-            <div class="exercise-item">
-                <div class="exercise-header">
-                    <h3>${exerciseName}</h3>
-                </div>
-                ${groupExercises.length > 1 ? `
-                    <div class="exercise-tabs">
-                        ${tabsHTML}
-                    </div>
-                ` : ''}
-                <div class="exercise-content-wrapper">
-                    ${contentHTML}
-                </div>
-            </div>
-        `;
-    }
-    
-    finalHTML += `
-        <div style="margin-top: 24px;">
-            <button onclick="finishWorkout()">Finish Workout</button>
-        </div>
-    `;
-    
-    list.innerHTML = finalHTML;
-}
-*/
 // Helper function to switch between exercise variations
 function switchExerciseTab(exercise, event) {
     // update state
