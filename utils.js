@@ -152,7 +152,10 @@ async function appendSheetData(range, values) {
 
 // Format date as YYYY-MM-DD
 function formatDate(date) {
-    return date.toISOString().split('T')[0];
+    let dateString = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+    console.log(date + " -> " + dateString);
+    return dateString;
+    //return date.toISOString().split('T')[0];
 }
 
 // Format time as HH:MM
